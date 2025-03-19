@@ -1,13 +1,22 @@
 import React from 'react';
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-// import auth from '@react-native-firebase/auth';
-// import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-// GoogleSignin.configure({
-//     webClientId: 'AIzaSyBBENfvUFD3XpqU-90-dBEmin6awX3H-M4',
-// });
+
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: "1018343746579-2js033oh704kg1mkr8vjb3s9t53ot5u8.apps.googleusercontent.com", // 안드로이드 클라이언트 ID
+    useProxy: true,
+  });
+
+  const [userInfo, setUserInfo] = useState(null);
+
   const handleKakaoLogin = () => {
     // 카카오 로그인 로직 추가 예정
     console.log('카카오 로그인');
@@ -15,18 +24,44 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleGoogleLogin = async () => {
-    // try {
-    // 
-    //     const { idToken } = await GoogleSignin.signIn();
-    // 
-    //     const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-    //     await auth().signInWithCredential(googleCredential);
-    //     console.log('구글 로그인 성공');
-    //     navigation.replace('Main'); // 메인 화면으로 이동
-    //   } catch (error) {
-    //     console.error(error);
-    //   }
+    
+    const storedUser = await AsyncStorage.getItem("@user");
+    if (!storedUser) {
+      if (response?.type === "success") {
+        await getUserInfo(response.authentication?.accessToken);
+      }
+    } else {
+      setUserInfo(JSON.parse(storedUser));
+    }
+
   };
+
+  const getUserInfo = async (token) => {
+    if (!token) return;
+    try {
+      const res = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await res.json();
+      await AsyncStorage.setItem("@user", JSON.stringify(user));
+      setUserInfo(user);
+      console.log("유저 정보:", user);
+      navigation.replace("Main");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("@user");
+    setUserInfo(null);
+    console.log("로그아웃 완료");
+  };
+
+  // Google 인증 응답이 변경될 때마다 실행
+  useEffect(() => {
+    handleGoogleLogin();
+  }, [response]);
 
   return (
     <View style={styles.container}>
@@ -39,9 +74,28 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.buttonText}>카카오 로그인</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, styles.googleButton]} onPress={handleGoogleLogin}>
+      <TouchableOpacity
+        style={[styles.button, styles.googleButton]}
+        onPress={() => promptAsync()}
+        disabled={!request} // 요청 준비가 안되었을 때 비활성화
+      >
         <Text style={styles.buttonText}>구글 로그인</Text>
       </TouchableOpacity>
+
+      {userInfo && (
+        <TouchableOpacity style={[styles.button]} onPress={handleLogout}>
+          <Text style={styles.buttonText}>로그아웃</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* 유저 정보 출력 */}
+      {userInfo && (
+        <View style={styles.userInfo}>
+          <Text>Logged in as:</Text>
+          <Text>{userInfo.name}</Text>
+          <Text>{userInfo.email}</Text>
+        </View>
+      )}
     </View>
   );
 }
