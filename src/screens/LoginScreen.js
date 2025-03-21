@@ -1,26 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-
+import axios from 'axios';
 
 
 WebBrowser.maybeCompleteAuthSession();
+
+const KAKAO_CLIENT_ID = "cbbc2ed9e711a63c37923983deea50a9";
+const KAKAO_REDIRECT_URI = "https://auth.expo.io/@taehoo/SayHello";
+
 
 export default function LoginScreen({ navigation }) {
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: "1018343746579-2js033oh704kg1mkr8vjb3s9t53ot5u8.apps.googleusercontent.com", // 안드로이드 클라이언트 ID
-    useProxy: true,
+    webClientId: "1018343746579-0rrlhl9e6g14u5kgud6mdo4grq4q5rbf.apps.googleusercontent.com",
+    iosClientId: "1018343746579-dpcs1lhg0deftabhf4kk8p8u037mmg55.apps.googleusercontent.com",
+    expoClientId: "1018343746579-8is4mh5v99cv5ngpprodlc7pej8lphnb.apps.googleusercontent.com",
+    scopes: ["profile", "email"],
   });
 
   const [userInfo, setUserInfo] = useState(null);
 
-  const handleKakaoLogin = () => {
+  const handleKakaoLogin = async () => {
     // 카카오 로그인 로직 추가 예정
-    console.log('카카오 로그인');
-    navigation.replace('Main'); 
+    // console.log('카카오 로그인');
+    // navigation.replace('Main'); 
+    try {
+      const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
+
+      const result = await WebBrowser.openAuthSessionAsync(authUrl);
+
+      if (result.type === "success") {
+        const code = result.url.split("code=")[1];
+
+        const tokenResponse = await axios.post(
+          "https://kauth.kakao.com/oauth/token",
+          {
+            grant_type: "authorization_code",
+            client_id: KAKAO_CLIENT_ID,
+            redirect_uri: KAKAO_REDIRECT_URI,
+            code: code,
+          },
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          }
+        );
+
+        const accessToken = tokenResponse.data.access_token;
+
+        const userResponse = await axios.get("https://kapi.kakao.com/v2/user/me", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const user = userResponse.data;
+        await AsyncStorage.setItem("@kakao_user", JSON.stringify(user));
+        setUserInfo(user);
+        console.log("카카오 유저 정보:", user);
+        Alert.alert("로그인 성공!", `사용자 정보: ${user.properties.nickname}`);
+        navigation.replace('Main');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("로그인 실패", "카카오 로그인을 처리하는 중 오류가 발생했습니다.");
+    }
   };
 
   const handleGoogleLogin = async () => {

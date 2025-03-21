@@ -2,6 +2,8 @@
   "expo": {
     "name": "SayHello",
     "slug": "SayHello",
+    "scheme": "sayhello",
+    "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +15,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "host.exp.exponent",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "1018343746579-dpcs1lhg0deftabhf4kk8p8u037mmg55.apps.googleusercontent.com"
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
