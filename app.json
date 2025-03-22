@@ -2,6 +2,7 @@
   "expo": {
     "name": "SayHello",
     "slug": "SayHello",
+    "owner": "taehoo",
     "scheme": "sayhello",
     "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
@@ -16,7 +17,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "host.exp.exponent",
+      "bundleIdentifier": "com.anonymous.SayHello",
       "config": {
         "googleSignIn": {
           "reservedClientId": "1018343746579-dpcs1lhg0deftabhf4kk8p8u037mmg55.apps.googleusercontent.com"

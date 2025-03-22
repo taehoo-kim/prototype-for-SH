@@ -1,7 +1,22 @@
 {
-    "build": {
-      "release": {
-        "distribution": "store"
+  "build": {
+    "production": {
+      "distribution": "store",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
+    "development": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
     }
   }
+}

@@ -4,13 +4,17 @@ import * as Google from "expo-auth-session/providers/google";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
+import * as AuthSession from "expo-auth-session";
 
+const redirectUri = AuthSession.makeRedirectUri({
+  useProxy: true, // Expo Go 환경에서 Proxy 사용
+});
+console.log("Redirect URI:", redirectUri);
 
 WebBrowser.maybeCompleteAuthSession();
 
 const KAKAO_CLIENT_ID = "cbbc2ed9e711a63c37923983deea50a9";
 const KAKAO_REDIRECT_URI = "https://auth.expo.io/@taehoo/SayHello";
-
 
 export default function LoginScreen({ navigation }) {
 
@@ -20,18 +24,28 @@ export default function LoginScreen({ navigation }) {
     iosClientId: "1018343746579-dpcs1lhg0deftabhf4kk8p8u037mmg55.apps.googleusercontent.com",
     expoClientId: "1018343746579-8is4mh5v99cv5ngpprodlc7pej8lphnb.apps.googleusercontent.com",
     scopes: ["profile", "email"],
+    useProxy: true,
+    // redirectUri: "https://auth.expo.io/@taehoo/SayHello",
   });
 
   const [userInfo, setUserInfo] = useState(null);
 
   const handleKakaoLogin = async () => {
     // 카카오 로그인 로직 추가 예정
-    // console.log('카카오 로그인');
-    // navigation.replace('Main'); 
+    navigation.replace('Main'); // 임시로 메인 스크린
+    console.log('카카오 로그인');
     try {
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: "your-app-scheme", // 앱 스키마 설정
+      });
+      console.log("Redirect URI:", redirectUri);
+      
       const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
 
       const result = await WebBrowser.openAuthSessionAsync(authUrl);
+
+
+      console.log("카카오 로그인 결과:", result);
 
       if (result.type === "success") {
         const code = result.url.split("code=")[1];
@@ -73,11 +87,13 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleGoogleLogin = async () => {
-    
+    navigation.replace('Main'); // 임시로 메인 스크린
+    console.log("Google OAuth 요청 URL:", request?.url);
+    console.log("Redirect URI:", request?.redirectUri);
     const storedUser = await AsyncStorage.getItem("@user");
     if (!storedUser) {
       if (response?.type === "success") {
-        await getUserInfo(response.authentication?.accessToken);
+      await getUserInfo(response.authentication?.accessToken);
       }
     } else {
       setUserInfo(JSON.parse(storedUser));
@@ -107,9 +123,10 @@ export default function LoginScreen({ navigation }) {
     console.log("로그아웃 완료");
   };
 
-  // Google 인증 응답이 변경될 때마다 실행
   useEffect(() => {
-    handleGoogleLogin();
+    if (response?.type === "success") {
+      handleGoogleLogin();
+    }
   }, [response]);
 
   return (
@@ -119,7 +136,12 @@ export default function LoginScreen({ navigation }) {
         Stay connected with your loved ones and make it easier to send greetings and check in.
       </Text>
 
-      <TouchableOpacity style={[styles.button, styles.kakaoButton]} onPress={handleKakaoLogin}>
+      <TouchableOpacity style={[styles.button, styles.kakaoButton]} 
+      onPress={() => {
+        console.log("카카오 로그인 버튼 클릭됨"); // 디버깅 로그 추가
+        handleKakaoLogin();
+      }}
+      >
         <Text style={styles.buttonText}>카카오 로그인</Text>
       </TouchableOpacity>
 
