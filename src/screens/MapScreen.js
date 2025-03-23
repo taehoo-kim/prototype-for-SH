@@ -9,7 +9,7 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState(""); // 검색어 상태
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 Marker 정보
 
-  // 샘플 데이터 (Marker 정보)
+  // 샘플 데이터 (나중에 수정해야함)
   const markers = [
     {
       id: "1",

@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }) {
   const handleKakaoLogin = async () => {
     // 카카오 로그인 로직 추가 예정
     navigation.replace('Main'); // 임시로 메인 스크린
-    console.log('카카오 로그인');
+    console.log('카카오 로그인'); // 로그 확인
     try {
       const redirectUri = AuthSession.makeRedirectUri({
         scheme: "your-app-scheme", // 앱 스키마 설정

@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 export default function HomeScreen() {
   const navigation = useNavigation();
 
-  // 샘플 데이터
+  // 샘플 데이터 (나중에 수정해야함)
   const peopleData = [
     { id: "1", name: "Mom", image: require("../../assets/mom.png") },
     { id: "2", name: "Dad", image: require("../../assets/dad.png") },
