@@ -6,15 +6,10 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import axios from 'axios';
 import * as AuthSession from "expo-auth-session";
 
-const redirectUri = AuthSession.makeRedirectUri({
-  useProxy: true, // Expo Go 환경에서 Proxy 사용
-});
-console.log("Redirect URI:", redirectUri);
-
 WebBrowser.maybeCompleteAuthSession();
 
 const KAKAO_CLIENT_ID = "cbbc2ed9e711a63c37923983deea50a9";
-const KAKAO_REDIRECT_URI = "https://auth.expo.io/@taehoo/SayHello";
+const KAKAO_REDIRECT_URI = "http://192.168.35.150:8081/oauth/callback/kakao";
 
 export default function LoginScreen({ navigation }) {
 
