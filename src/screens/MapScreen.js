@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
+import BottomSheet from "@gorhom/bottom-sheet";
 
 export default function MapScreen() {
   const [location, setLocation] = useState(null); // 현재 위치 저장
   const [errorMsg, setErrorMsg] = useState(null); // 오류 메시지
   const [searchQuery, setSearchQuery] = useState(""); // 검색어 상태
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 Marker 정보
+  const bottomSheetRef = useRef(null); // Bottom Sheet 참조
 
   // 샘플 데이터 (나중에 수정해야함)
   const markers = [
@@ -65,6 +67,11 @@ export default function MapScreen() {
     })();
   }, []);
 
+  const handleMarkerPress = (marker) => {
+    setSelectedMarker(marker);
+    bottomSheetRef.current?.snapToIndex(0); // Bottom Sheet 열기
+  };
+
   return (
     <View style={styles.container}>
       {/* 검색창 및 필터/정렬 */}
@@ -90,7 +97,7 @@ export default function MapScreen() {
           style={{ flex: selectedMarker ? 0.6 : 1 }} // Marker 선택 여부에 따라 지도 크기 조정
           initialRegion={location}
           showsUserLocation={true} // 현재 위치 표시
-          onPress={() => setSelectedMarker(null)} // 빈 공간 클릭 시 선택 해제
+          onPress={() => bottomSheetRef.current?.close()} // 지도 클릭시 Bottom Sheet 닫기
         >
           {/* Marker 렌더링 */}
           {filteredMarkers.map((marker) => (
@@ -102,16 +109,25 @@ export default function MapScreen() {
               }}
               title={marker.title}
               description={marker.description}
-              onPress={() => setSelectedMarker(marker)} // Marker 클릭 시 정보 저장
-            />
+              onPress={() => handleMarkerPress(marker)} // Marker 클릭 시 정보 저장
+            >
+              {/* 커스텀 Marker 스타일 */}
+              <View style={[styles.markerContainer, marker.id === "1" && styles.currentUserMarker]}>
+                <Text style={[styles.markerText, marker.id === "1" && styles.currentUserText]}>
+                  {marker.title}
+                </Text>
+              </View>
+            </Marker>
           ))}
         </MapView>
       ) : (
         <Text>{errorMsg || "Loading..."}</Text>
       )}
 
+      
+
       {/* 선택된 Marker 정보 표시 */}
-      {selectedMarker && (
+      {/* {selectedMarker && (
         <View style={styles.infoContainer}>
           <Text style={styles.infoTitle}>{selectedMarker.title}</Text>
           <Text style={styles.infoDescription}>{selectedMarker.description}</Text>
@@ -119,7 +135,36 @@ export default function MapScreen() {
             <Text style={styles.selectButtonText}>Select</Text>
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
+
+      {/* Bottom Sheet */}
+      <BottomSheet
+        ref={bottomSheetRef} 
+        index={0} 
+        snapPoints={["25%", "50%"]}
+        enablePanDownToClose={true}
+        onChange={(index) => {
+          console.log("BottomSheet index changed:", index);
+          if (index === -1) console.log("Bottom Sheet is closed");
+          else console.log("Bottom Sheet is open");
+        }}
+      >
+        <View style={styles.contentContainer}>
+          {selectedMarker ? (
+            <>
+              <Text style={styles.infoTitle}>{selectedMarker.title}</Text>
+              <Text style={styles.infoDescription}>
+                {selectedMarker.description}
+              </Text>
+              <TouchableOpacity style={styles.selectButton}>
+                <Text style={styles.selectButtonText}>Select</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text>No marker selected</Text>
+          )}
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -127,6 +172,8 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // position: 'relative',
+    // zIndex: 0,
     backgroundColor: "#fff",
   },
   searchContainer: {
@@ -179,24 +226,55 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  // infoContainer: {
+  //   flexDirection: "column",
+  //   flex: 0.4, // 선택된 Marker가 있을 때 정보 창 표시
+  //   backgroundColor: "#fff",
+  //   borderTopLeftRadius: 20,
+  //   borderTopRightRadius: 20,
+  //   paddingHorizontal: 20,
+  //   paddingVertical: 15,
+  //   shadowColor: "#000",
+  //   shadowOffset: { width: 0, height: -2 },
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 5,
+  //   elevation: 10, // Android 그림자 효과
+  // },
   infoContainer: {
-    flexDirection: "column",
-    flex: 0.4, // 선택된 Marker가 있을 때 정보 창 표시
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10, // Android 그림자 효과
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: "center",
   },
   infoTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
     color:"#333"
-  },})
+  },
+  markerContainer: {
+    backgroundColor: "#fff",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+
+  markerText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+})
 

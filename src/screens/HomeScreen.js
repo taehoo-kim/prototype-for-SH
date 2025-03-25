@@ -1,4 +1,3 @@
-import React from "react";
 import {
   View,
   Text,
@@ -8,12 +7,36 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
+import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import MapView, { Marker } from "react-native-maps";
 import { useNavigation } from "@react-navigation/native";
+import * as Location from "expo-location";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [setLoading] = useState(true);
+
+  // 현재 위치 가져오기
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.error("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setLoading(false);
+    })();
+  }, []);
 
   // 샘플 데이터 (나중에 수정해야함)
   const peopleData = [
@@ -21,6 +44,17 @@ export default function HomeScreen() {
     { id: "2", name: "Dad", image: require("../../assets/dad.png") },
     { id: "3", name: "Brother1", image: require("../../assets/brother1.png") },
     { id: "4", name: "Jane", image: require("../../assets/jane.png") },
+  ];
+
+  const otherUsers = [
+    { id: 1,
+      name: "Jane",
+      latitude: 0.003,
+      longitude: 0.003},
+    { id: 2, 
+      name: "Brother1",
+      latitude: 0.003,
+      longitude: 0.003 },
   ];
 
   const newsData = [
@@ -79,22 +113,30 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate("Map")}>
-
-          {/* 나중에 수정해야함. Map 초기값 임의로 넣음. */}
           <MapView
             style={styles.map}
-            initialRegion={{
-              latitude: 37.78825,
-              longitude: -122.4324,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
+            region={currentLocation} // 현재 위치를 지도에 반영
+            showsUserLocation={true} // 사용자 위치 표시
           >
-            {/* 사용자 위치 표시 */}
-            <Marker
-              coordinate={{ latitude: 37.78825, longitude: -122.4324 }}
-              title="Me"
-            />
+            {/* 현재 사용자 마커 */}
+            {currentLocation && (
+              <Marker coordinate={currentLocation}>
+                <View style={[styles.markerContainer, styles.currentUserMarker]}>
+                  <Text style={[styles.markerText, styles.currentUserText]}>Me</Text>
+                </View>
+              </Marker>
+            )}
+            {/* 다른 사용자 마커 */}
+            {otherUsers.map((user) => (
+              <Marker
+                key={user.id}
+                coordinate={{ latitude: user.latitude, longitude: user.longitude }}
+              >
+                <View style={styles.markerContainer}>
+                  <Text style={styles.markerText}>{user.name}</Text>
+                </View>
+              </Marker>
+            ))}
           </MapView>
         </TouchableOpacity>
       </View>
@@ -286,5 +328,31 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 15,
     borderRadius: 5,
-  },  
+  },
+  markerContainer: {
+    backgroundColor: "#fff",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  currentUserMarker: {
+    backgroundColor: "#000",
+    borderWidth: 0,
+  },
+  markerText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  currentUserText: {
+    color: "#fff",
+  },
 });
